@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 나의 바이브 코딩 기획서</title>
+    <!-- 폰트 두께를 다양하게 사용하기 위해 Pretendard 전체 로드 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    
+    <!-- 화면 캡처를 위한 html2canvas 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            /* 메인 컬러 팔레트 */
+            --clipboard-bg: #2b3a67; /* 딥 블루 테두리 */
+            --board-bg: #f8fafc;     /* 내부 보드 배경 */
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --purple-glow: rgba(167, 139, 250, 0.4);
+            --purple-border: #c4b5fd;
+            
+            /* 그라데이션 팔레트 */
+            --bg-gradient: radial-gradient(circle at 10% 20%, #e4eaff 0%, #f4e8ff 50%, #e0f7fa 100%);
+            --header-purple-light: linear-gradient(90deg, #eaddff, #f3e8ff);
+            --header-purple-dark: linear-gradient(90deg, #d8b4fe, #eaddff);
+            --header-mint: linear-gradient(90deg, #bbf7d0, #ccfbf1);
+            --header-cyan: linear-gradient(90deg, #a5f3fc, #cffafe);
+            --profile-bg: linear-gradient(90deg, #f3e8ff 0%, #e0e7ff 50%, #e0f2fe 100%);
+            
+            /* 버튼 그라데이션 */
+            --btn-copy: linear-gradient(135deg, #10b981, #059669);
+            --btn-canva: linear-gradient(135deg, #3b82f6, #2563eb);
+            --btn-padlet: linear-gradient(135deg, #f59e0b, #d97706);
+            --btn-capture: linear-gradient(135deg, #f43f5e, #e11d48);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 캡처 시 외부 배경 여백이 안 생기도록 마진 대신 패딩 사용 */
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        /* --- ✨ 시작 전 안내 모달 (오버레이) 스타일 --- */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 100000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+        
+        .welcome-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .welcome-modal {
+            background: #ffffff;
+            width: 90%;
+            max-width: 480px;
+            border-radius: 28px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            transform: translateY(0) scale(1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid #c4b5fd;
+        }
+        
+        .welcome-overlay.hidden .welcome-modal {
+            transform: translateY(30px) scale(0.95);
+        }
+        
+        .welcome-title {
+            font-size: 30px;
+            font-weight: 900;
+            color: #4338ca;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        
+        .welcome-desc {
+            font-size: 16px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            word-break: keep-all;
+            font-weight: 600;
+        }
+        
+        .welcome-desc b {
+            color: #2563eb;
+        }
+
+        /* 💡 계정 정보 힌트 (학생 선택) 박스 */
+        .account-hint-box {
+            background: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            text-align: left;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .account-hint-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #d97706;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .student-select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+            background: #ffffff;
+            margin-bottom: 10px;
+        }
+        
+        .student-select:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px var(--purple-glow);
+        }
+
+        .account-details {
+            display: none;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-row-modal {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .info-row-modal:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label-modal {
+            color: #475569;
+            font-weight: 800;
+            width: 65px;
+        }
+
+        .info-value-modal {
+            font-family: monospace;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .copy-btn-small {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .copy-btn-small:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn-small.copied {
+            background-color: #6366f1;
+        }
+        
+        .welcome-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .welcome-btn {
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-login {
+            background: var(--btn-canva);
+            color: white;
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-login:hover { 
+            filter: brightness(1.1); 
+            transform: translateY(-2px); 
+        }
+        
+        .btn-start {
+            background: #f1f5f9;
+            color: var(--text-sub);
+        }
+        
+        .btn-start:hover { 
+            background: #e2e8f0; 
+            color: var(--text-main);
+        }
+
+        /* --- 클립보드 및 메인 보드 디자인 --- */
+        .clipboard-frame {
+            background-color: var(--clipboard-bg);
+            padding: 16px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.1);
+            position: relative;
+            width: 100%; /* 여백 캡처 방지를 위해 꽉 차게 설정 */
+            max-width: 1600px;
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .clipboard-clip {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 40px;
+            background: linear-gradient(to bottom, #ffffff, #cbd5e1);
+            border-radius: 24px;
+            border: 2px solid #94a3b8;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.25), inset 0 3px 6px white;
+            z-index: 10;
+        }
+
+        .planner-board {
+            background-color: var(--board-bg);
+            border-radius: 20px;
+            padding: 25px 35px 20px 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            position: relative; 
+        }
+
+        .capture-btn {
+            position: absolute;
+            top: 25px;
+            right: 35px;
+            background: var(--btn-capture);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+            transition: all 0.2s;
+            z-index: 5;
+        }
+        
+        .capture-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(225, 29, 72, 0.4);
+            filter: brightness(1.1);
+        }
+        
+        .capture-btn:active {
+            transform: translateY(1px);
+        }
+
+        .header-area {
+            text-align: center;
+            margin-bottom: 5px;
+            margin-top: 10px;
+        }
+        
+        .header-area h1 {
+            color: #1e3a8a; 
+            font-size: 58px; 
+            font-weight: 900; 
+            letter-spacing: -1.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            -webkit-text-stroke: 6px #ffffff;
+            paint-order: stroke fill;
+            text-shadow: 0 8px 15px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .header-area .subtitle {
+            color: var(--text-main);
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .creator-profile {
+            background: var(--profile-bg);
+            border-radius: 20px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            border: 2px solid #ffffff;
+        }
+        
+        .profile-title {
+            font-weight: 900;
+            font-size: 17px;
+            color: var(--text-main);
+            line-height: 1.3;
+            width: 100px;
+            text-align: center;
+        }
+        
+        .profile-inputs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            flex: 1;
+        }
+        
+        .profile-inputs input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ffffff;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s;
+        }
+        
+        .profile-inputs input:focus {
+            background: #ffffff;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px var(--purple-glow);
+        }
+
+        .layout-grid {
+            display: flex;
+            gap: 24px;
+            align-items: stretch;
+            flex: 1;
+        }
+        
+        .left-panel {
+            flex: 1.4; 
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .left-top-grid {
+            display: flex;
+            gap: 24px;
+            flex: 1;
+        }
+        
+        .left-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .right-panel {
+            flex: 1.1; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-card.full-height {
+            height: 100%;
+        }
+        
+        .section-header {
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+        }
+        .header-purple-light { background: var(--header-purple-light); }
+        .header-purple-dark { background: var(--header-purple-dark); }
+        .header-mint { background: var(--header-mint); }
+        .header-cyan { background: var(--header-cyan); }
+        .header-prompt { background: var(--header-cyan); }
+
+        .section-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex: 1;
+            background: rgba(255,255,255,0.6);
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            background: #f1f5f9;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            transition: all 0.2s;
+        }
+        .input-box:focus {
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--purple-glow), 0 0 0 1px #8b5cf6;
+        }
+        .input-box::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .feature-item span {
+            font-weight: 800;
+            color: var(--text-main);
+            font-size: 17px;
+            width: 20px;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 250px;
+            padding: 20px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            background: #f1f5f9;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+            line-height: 1.7;
+            outline: none;
+            resize: none;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            transition: all 0.2s;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .prompt-textarea:focus {
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--purple-glow), 0 0 0 1px #8b5cf6;
+        }
+        .prompt-textarea::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .prompt-capture-div {
+            width: 100%;
+            flex: 1;
+            min-height: 250px;
+            padding: 20px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            background: #f1f5f9;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+            line-height: 1.7;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            white-space: pre-wrap; 
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        .prompt-capture-div.is-placeholder {
+            color: #94a3b8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
+        }
+        
+        .action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn:hover {
+            filter: brightness(1.1);
+        }
+        
+        .copy-btn {
+            background: var(--btn-copy);
+        }
+
+        .footer-tip {
+            text-align: center;
+            font-size: 16px;
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        /* ------------------------------------- */
+        /* ✨ 캡처 완료 모달창 (토스트 팝업) 디자인 */
+        /* ------------------------------------- */
+        #toastPopup {
+            visibility: hidden;
+            min-width: 520px;
+            background-color: #ffffff;
+            color: var(--text-main);
+            border-radius: 28px;
+            padding: 45px 35px;
+            position: fixed;
+            z-index: 9999;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+            border: 5px solid #10b981; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 25px;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        #toastPopup.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .toast-title {
+            line-height: 1.4;
+        }
+
+        .toast-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .toast-btn {
+            flex: 1;
+            padding: 16px 10px;
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            font-weight: 900;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+        }
+
+        .toast-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .toast-btn:active {
+            transform: translateY(2px);
+        }
+
+        .padlet-btn {
+            background: var(--btn-padlet);
+            position: relative; /* 손가락 호버를 위한 세팅 */
+            overflow: visible;
+        }
+
+        /* ✨ 패들렛 바로가기 위 손가락 호버 애니메이션 */
+        .hover-finger {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .padlet-btn:hover .hover-finger {
+            opacity: 1;
+            animation: pointDown 0.4s infinite alternate ease-in-out;
+        }
+
+        @keyframes pointDown {
+            0% { transform: translateX(-50%) translateY(0); }
+            100% { transform: translateX(-50%) translateY(10px); }
+        }
+    </style>
+</head>
+<body spellcheck="false">
+
+    <!-- 🌟 시작 전 안내 모달 (오버레이) -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-modal">
+            <div class="welcome-title">캔바 로그인</div>
+            <div class="welcome-desc">
+                원활한 프롬프트 복사 및 AI 창작을 위해<br>
+                <b>캔바(Canva)에 먼저 로그인</b>해 주세요!
+            </div>
+            
+            <!-- 💡 계정 정보 선택 박스 -->
+            <div class="account-hint-box">
+                <div class="account-hint-title">
+                    <span>💡</span> 내 캔바 로그인 계정 찾기
+                </div>
+                
+                <!-- 학생 이름 드롭다운 -->
+                <select class="student-select" id="studentSelect" onchange="showAccountInfo()">
+                    <option value="">본인 이름을 선택하세요</option>
+                    <option value="권다은">권다은</option>
+                    <option value="권도현">권도현</option>
+                    <option value="김민">김민</option>
+                    <option value="김민찬">김민찬</option>
+                    <option value="김지안">김지안</option>
+                    <option value="김지한">김지한</option>
+                    <option value="나우빈">나우빈</option>
+                    <option value="박주성">박주성</option>
+                    <option value="온리한">온리한</option>
+                    <option value="이수현">이수현</option>
+                    <option value="이승수">이승수</option>
+                    <option value="이윤정">이윤정</option>
+                    <option value="장윤석">장윤석</option>
+                    <option value="전수호">전수호</option>
+                    <option value="전은찬">전은찬</option>
+                    <option value="정규빈">정규빈</option>
+                    <option value="정규하">정규하</option>
+                    <option value="정연우">정연우</option>
+                    <option value="정은후">정은후</option>
+                    <option value="조윤아">조윤아</option>
+                    <option value="조재하">조재하</option>
+                    <option value="최지훈">최지훈</option>
+                    <option value="태민유">태민유</option>
+                    <option value="하서준">하서준</option>
+                    <option value="홍아연">홍아연</option>
+                </select>
+
+                <!-- 선택 시 나타나는 아이디/비밀번호 영역 -->
+                <div class="account-details" id="accountDetails">
+                    <div class="info-row-modal">
+                        <span class="info-label-modal">아이디</span>
+                        <span class="info-value-modal" id="displayId"></span>
+                        <button class="copy-btn-small" onclick="copyModalInfo('id', this)">복사</button>
+                    </div>
+                    <div class="info-row-modal">
+                        <span class="info-label-modal">비밀번호</span>
+                        <span class="info-value-modal" id="displayPw"></span>
+                        <button class="copy-btn-small" onclick="copyModalInfo('pw', this)">복사</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-btn-group">
+                <!-- 캔바로 로그인하러 가는 링크 -->
+                <a href="https://canva.com/abc" target="_blank" class="welcome-btn btn-login">
+                    ✨ 캔바 열기
+                </a>
+                <!-- 완료 버튼 -->
+                <button type="button" class="welcome-btn btn-start" onclick="closeWelcomeModal()">
+                    ✅ 캔바 로그인 완료! (기획서 작성하러가기)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 화면 중앙 팝업 (확인 버튼 삭제 - 패들렛 바로가기 클릭 유도) -->
+    <div id="toastPopup">
+        <div class="toast-title" id="toastTitle"></div>
+        
+        <div class="toast-buttons" id="toastButtonsContainer">
+            <!-- 패들렛 버튼 (마우스 올리면 손가락 등장!) -->
+            <a href="https://padlet.com/dlrka131/6-n42mvcn623nkxa0" target="_blank" class="toast-btn padlet-btn" id="padletBtnWrap" onclick="closeToast()">
+                <span class="hover-finger">👇</span>
+                📌 패들렛 바로가기
+            </a>
+        </div>
+    </div>
+
+    <!-- 클립보드 디자인 래퍼 -->
+    <div class="clipboard-frame" id="captureTarget">
+        <div class="clipboard-clip" data-html2canvas-ignore="true"></div>
+        
+        <div class="planner-board">
+            
+            <!-- 📸 스크린샷 캡처 버튼 -->
+            <button class="capture-btn" onclick="copyScreenshot()" data-html2canvas-ignore="true">
+                📸 기획서 스크린샷 복사
+            </button>
+            
+            <!-- 상단 타이틀 -->
+            <div class="header-area">
+                <h1>✨ 나의 바이브 코딩 기획서</h1>
+                <div class="subtitle">AI와 함께 웹앱을 만들기 전, 내 머릿속 아이디어를 구체화하는 창작 설계도.</div>
+            </div>
+
+            <!-- 크리에이터 프로필 -->
+            <div class="creator-profile">
+                <div class="profile-title">크리에이터<br>프로필</div>
+                <div class="profile-inputs">
+                    <input type="text" id="studentGrade" placeholder="🎓 학년 (예: 6)" spellcheck="false">
+                    <input type="text" id="studentClass" placeholder="🏫 반 (예: 3)" spellcheck="false">
+                    <input type="text" id="studentNumber" placeholder="🔢 번호 (예: 15)" spellcheck="false">
+                    <input type="text" id="studentName" placeholder="👤 이름 (예: 김철수)" spellcheck="false">
+                </div>
+            </div>
+
+            <!-- 메인 콘텐츠 레이아웃 -->
+            <div class="layout-grid">
+                
+                <!-- 왼쪽 패널 -->
+                <div class="left-panel">
+                    <div class="left-top-grid">
+                        
+                        <div class="left-col">
+                            <div class="section-card">
+                                <div class="section-header header-purple-light">
+                                    <span>📌 1. 프로젝트 컨셉</span>
+                                    <span>💡</span>
+                                </div>
+                                <div class="section-body">
+                                    <input type="text" id="projectTitle" class="input-box" placeholder="예시: 구구단 마스터 게임" spellcheck="false">
+                                </div>
+                            </div>
+
+                            <div class="section-card" style="flex: 1;">
+                                <div class="section-header header-mint">
+                                    <span>🎯 3. 타겟 사용자 및 용도</span>
+                                </div>
+                                <div class="section-body">
+                                    <input type="text" id="targetUser" class="input-box" placeholder="예시: 초등학생, 학습용" spellcheck="false">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="left-col">
+                            <div class="section-card full-height">
+                                <div class="section-header header-purple-dark">
+                                    <span>💡 2. 꼭 넣고 싶은 핵심 기능 (TOP 3)</span>
+                                    <span>🎚️</span>
+                                </div>
+                                <div class="section-body" style="justify-content: space-around;">
+                                    <div class="feature-item">
+                                        <span>1.</span>
+                                        <input type="text" id="feature1" class="input-box" placeholder="기능 1 작성" spellcheck="false">
+                                    </div>
+                                    <div class="feature-item">
+                                        <span>2.</span>
+                                        <input type="text" id="feature2" class="input-box" placeholder="기능 2 작성" spellcheck="false">
+                                    </div>
+                                    <div class="feature-item">
+                                        <span>3.</span>
+                                        <input type="text" id="feature3" class="input-box" placeholder="기능 3 작성" spellcheck="false">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-header header-cyan">
+                            <span>🎨 4. 나만의 바이브 (디자인 & 컬러)</span>
+                            <span>🖌️</span>
+                        </div>
+                        <div class="section-body" style="flex-direction: row; gap: 20px;">
+                            <input type="text" id="vibeConcept" class="input-box" placeholder="📈 바이브 컨셉 (예: 귀여운, 우주느낌)" spellcheck="false">
+                            <input type="text" id="vibeColor" class="input-box" placeholder="🌈 메인 컬러 (예: 진한 남색)" style="flex: 1;" spellcheck="false">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 오른쪽 패널 -->
+                <div class="right-panel">
+                    <div class="section-card full-height">
+                        <div class="section-header header-prompt">
+                            <span>🤖 5. AI 프롬프트 작업실</span>
+                            <span style="background: #1e293b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 13px;">>_</span>
+                        </div>
+                        <div class="section-body">
+                            <textarea id="promptText" class="prompt-textarea" spellcheck="false" placeholder="[예시] 제목이 '구구단 마스터 게임'인 웹 앱을 만들어줘.
+1. 시작 버튼을 누르면 랜덤 구구단 문제가 나온다.
+2. 사용자가 정답을 입력하고 확인 버튼을 누르면 정답 여부를 알려준다.
+3. 맞힌 개수에 따라 점수가 올라가고 최종 점수가 뜨도록 디자인해줘."></textarea>
+                            
+                            <div class="button-group" data-html2canvas-ignore="true">
+                                <button type="button" class="action-btn copy-btn" onclick="copyPrompt()">
+                                    📋 프롬프트 복사하기
+                                </button>
+                                <!-- 캔바 이동 버튼 삭제됨 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 하단 안내 문구 -->
+            <div class="footer-tip" data-html2canvas-ignore="true">
+                이 설계도를 완성했다면 이제 프롬프트를 복사하고 캔바로 출동할 시간! 🚀
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 학생별 계정 데이터 연동 ---
+        const studentAccounts = {
+            "권다은": { id: "kindgreenseal35", pw: "shyroselock777" },
+            "권도현": { id: "jazzygrayfork62", pw: "ehgus1234!" },
+            "김민": { id: "gladwhitebison25", pw: "briskblackpoppy882" },
+            "김민찬": { id: "nimblegoldmoth78", pw: "alscks1234!" },
+            "김지안": { id: "cheekytealcave54", pw: "wldks1234!" },
+            "김지한": { id: "fruityplummoon42", pw: "wlgks1234!" },
+            "나우빈": { id: "firmaquamouse87", pw: "singleambership896" },
+            "박주성": { id: "glassyjadewolf22", pw: "gladvioletjam745" },
+            "온리한": { id: "chirpytansword23", pw: "glassyjadeboat459" },
+            "이수현": { id: "bendycreamsail67", pw: "solidwhitebrook836" },
+            "이승수": { id: "goodhoneyboat37", pw: "rowdyamberraven689" },
+            "이윤정": { id: "chattynavyduck34", pw: "giddyamberpan476" },
+            "장윤석": { id: "goofywhitefox37", pw: "perkymaroonpond288" },
+            "전수호": { id: "dewymaroonkid54", pw: "dandyjadedonut238" },
+            "전은찬": { id: "modestwhitepear28", pw: "prettycorallake737" },
+            "정규빈": { id: "comfycreamkoala44", pw: "clearrosecat593" },
+            "정규하": { id: "tamepeachdrum72", pw: "pluckytancolt272" },
+            "정연우": { id: "brisklimepony34", pw: "dandygraybarn554" },
+            "정은후": { id: "neatjadedaisy88", pw: "fullrubydune664" },
+            "조윤아": { id: "tallpinkseal48", pw: "sweetbronzebeach853" },
+            "조재하": { id: "eagerrubymug72", pw: "ruddyorangetorch533" },
+            "최지훈": { id: "lightblackjoey25", pw: "itchybluebison728" },
+            "태민유": { id: "lovelytantruck33", pw: "grandpeachbee894" },
+            "하서준": { id: "groovycoralarmor74", pw: "safemintmango484" },
+            "홍아연": { id: "dapperoliveflag76", pw: "funnylilacriver254" }
+        };
+
+        function showAccountInfo() {
+            const name = document.getElementById("studentSelect").value;
+            const detailsBox = document.getElementById("accountDetails");
+            const displayId = document.getElementById("displayId");
+            const displayPw = document.getElementById("displayPw");
+
+            if (name && studentAccounts[name]) {
+                displayId.innerText = studentAccounts[name].id;
+                displayPw.innerText = studentAccounts[name].pw;
+                detailsBox.style.display = "block";
+                
+                const nameInput = document.getElementById("studentName");
+                if(nameInput && nameInput.value === "") {
+                    nameInput.value = name;
+                }
+            } else {
+                detailsBox.style.display = "none";
+            }
+        }
+
+        function copyModalInfo(type, btn) {
+            let textToCopy = "";
+            if (type === "id") textToCopy = document.getElementById("displayId").innerText;
+            if (type === "pw") textToCopy = document.getElementById("displayPw").innerText;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "복사됨!";
+                btn.classList.add("copied");
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove("copied");
+                }, 1500);
+            });
+        }
+
+        function closeWelcomeModal() {
+            const overlay = document.getElementById('welcomeOverlay');
+            if(overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+        
+        // 패들렛 버튼을 눌렀을 때 팝업을 닫아줌
+        function closeToast() {
+            const toast = document.getElementById('toastPopup');
+            if(toast) {
+                toast.classList.remove('show');
+            }
+        }
+
+        window.addEventListener('pageshow', function() {
+            const inputs = document.querySelectorAll('input[type="text"], textarea');
+            inputs.forEach(input => {
+                input.value = '';
+                input.setAttribute('spellcheck', 'false');
+                input.setAttribute('autocorrect', 'off');
+                input.setAttribute('autocapitalize', 'off');
+            });
+            document.getElementById("studentSelect").value = "";
+            document.getElementById("accountDetails").style.display = "none";
+        });
+
+        // 텍스트 프롬프트 복사 시
+        function copyPrompt() {
+            const promptInput = document.getElementById('promptText');
+            if (promptInput.value.trim() === "") {
+                const toastTitle = document.getElementById('toastTitle');
+                toastTitle.innerHTML = `<span style="font-size:26px; color:#ef4444; font-weight:900;">프롬프트 내용이 비어있어요!</span>`;
+                document.getElementById('toastPopup').classList.add('show');
+                document.getElementById('padletBtnWrap').style.display = 'none';
+                
+                setTimeout(() => { document.getElementById('toastPopup').classList.remove('show'); }, 3000);
+                return;
+            }
+            
+            navigator.clipboard.writeText(promptInput.value).then(() => {
+                const toastTitle = document.getElementById('toastTitle');
+                toastTitle.innerHTML = `<span style="font-size:26px; color:#10b981; font-weight:900;">텍스트 복사 완료!</span><br><span style="font-size:18px; color:#334155;">캔바 화면에 붙여넣으세요.</span>`;
+                document.getElementById('padletBtnWrap').style.display = 'none'; // 텍스트 복사 땐 패들렛 숨김
+                document.getElementById('toastPopup').style.borderColor = "#10b981";
+                document.getElementById('toastPopup').classList.add('show');
+                
+                setTimeout(() => { document.getElementById('toastPopup').classList.remove('show'); }, 3000);
+            });
+        }
+
+        // 📸 스크린샷 캡처 시
+        async function copyScreenshot() {
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+
+            const targetElement = document.getElementById('captureTarget');
+            const originalBg = targetElement.style.backgroundColor;
+            
+            try {
+                targetElement.style.backgroundColor = '#2b3a67'; 
+
+                const canvas = await html2canvas(targetElement, {
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: '#2b3a67',
+                    onclone: function(clonedDoc) {
+                        const clonedTarget = clonedDoc.getElementById('captureTarget');
+                        
+                        // ⭐️ 패들렛 붙여넣기 시 지저분한 회색 배경(마진, 그림자)이 캡처되지 않도록 리셋!
+                        clonedTarget.style.boxShadow = 'none';
+                        clonedTarget.style.margin = '0';
+                        clonedDoc.body.style.padding = '0';
+                        clonedDoc.body.style.margin = '0';
+
+                        const clonedTextarea = clonedDoc.getElementById('promptText');
+                        const originalTextarea = document.getElementById('promptText');
+                        
+                        if (clonedTextarea && originalTextarea) {
+                            const div = clonedDoc.createElement('div');
+                            div.className = 'prompt-capture-div';
+                            
+                            if (originalTextarea.value.trim() !== '') {
+                                div.textContent = originalTextarea.value;
+                            } else {
+                                div.textContent = originalTextarea.getAttribute('placeholder');
+                                div.classList.add('is-placeholder');
+                            }
+                            
+                            clonedTextarea.parentNode.replaceChild(div, clonedTextarea);
+                        }
+                    }
+                });
+
+                targetElement.style.backgroundColor = originalBg;
+
+                canvas.toBlob(async function(blob) {
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        
+                        // ⭐️ 요청하신 '아주 큰 글씨' 캡처 완료 안내 팝업 출력 (자동으로 안 닫힘)
+                        const toastTitle = document.getElementById('toastTitle');
+                        toastTitle.innerHTML = `<span style="font-size:36px; color:#f43f5e; font-weight:900; line-height:1.5;">패들렛에서<br><span style="background:#ffe4e6; padding:0 12px; border-radius:12px; font-size:48px;">Ctrl + V</span> 하세요!!</span>`;
+                        document.getElementById('padletBtnWrap').style.display = 'flex'; // 패들렛 버튼 보이기
+                        document.getElementById('toastPopup').style.borderColor = "#f43f5e";
+                        document.getElementById('toastPopup').classList.add('show');
+
+                    } catch (err) {
+                        console.error(err);
+                        const toastTitle = document.getElementById('toastTitle');
+                        toastTitle.innerHTML = `<span style="font-size:24px; color:#ef4444; font-weight:900;">캡처 복사에 실패했습니다!</span>`;
+                        document.getElementById('padletBtnWrap').style.display = 'none';
+                        document.getElementById('toastPopup').classList.add('show');
+                        setTimeout(() => { document.getElementById('toastPopup').classList.remove('show'); }, 3000);
+                    }
+                }, "image/png");
+
+            } catch (err) {
+                console.error(err);
+                targetElement.style.backgroundColor = originalBg;
+            }
+        }
+    </script>
+</body>
+</html>
